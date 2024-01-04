@@ -1,0 +1,48 @@
+In our products and cart we faker dependency in common.
+when container app loads products & cart it loads faker 2 times.
+How to avoid this problem??
+- This can be solved using modulefederationplugin.
+ex:
+    - container fetches products remoteEntry.js File.
+    - container fetches cart remoteEntry.js File.
+    - container notices that both require Faker!
+    - container can choose to load only one copy from either cart or products.
+    - single copy is made available to both cart + products
+
+Configuration:- (small change in modulefederationplugin)
+
+1) Inside products & cart inside webpack.config.js inside modulefederationplugin
+add one more property  shared: ['faker'] -> Inside cart and products.
+And restart both apps.
+
+2) Inside products & cart we can error saying "Shared module is not available for eager consumption: webpack/sharing/consume/default/faker/faker"
+   Before Loading faker our app try to share it which is a problem. 
+
+    import('./asdaqw') -> This is a function
+    import './asdaqw'  -> This is standalone import(expecting it is present already)
+
+    Solution:- (loading bootstrap async)
+        - Do the same thing u did in container.
+        - Inside index you load bootstrap.
+        - Inside bootstrap import the dependency
+    - webpack will get oppturnity to fetch faker before runnning bootstrap file.
+
+
+Thats it 😄
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+When both versions of faker are different major versions then only our container will load 2 diff versions of faker automatically.
+
+We cannot load multiple versions of react.
+we have to restrict react to be only one.
+HOW??
+In Remote app:
+
+    shared:{
+        faker:{
+            singleton: true,
+        }
+    }
+
+if have multiple versions of faker and load into browser even after the rule.
+It will show "" warning that unsatisfied version "".
+It will load only one copy of faker.

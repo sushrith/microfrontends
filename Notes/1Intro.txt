@@ -1,0 +1,59 @@
+what are microfrontends??
+    - divide a monolithic app into multiple,smaller apps.
+    - Each smaller app is responsible for a distinct feature of the product.
+
+why use them?
+    - Multiple engineering teams can work in isolation
+    - Each smaller app is easier to understand and make changes to.
+
+Major Features are divided into diff applications.
+There wont be any app to app communication.
+data will be updated and fetched using common store.
+
+example - 
+
+    productListing                      shoppingCart
+        |                                       |
+        |                                       |
+        |--------------------------------       |
+        |                               |       |
+        |------>API for Retrieving    API for Managing 
+                Products                 shoppingCart
+
+question:
+- Which microfrontends to be displayed on screen??
+    Create other microfrontend[Container] which decides when/where to show each microfrontend.
+
+                    ------Container(MFE1)---
+                    |                       |
+                    |                       |
+         productListing(MFE2)         Cart(MFE3)       
+
+- How Container will get access to source code of MFE2 and MFE3(Integration)
+    There is no single perfect solution to Integration
+    Many solutions, each have pros and cons.
+    Look at what your requirements are, then pick a solution.
+
+    3 Types:
+    1) Build-Time Integration
+    2) Run-Time Integration
+    3) Server Integration
+
+1) Build-Time Integration (compile time Integration)
+Before container gets loaded in the browser, it gets access to productList source code.
+create a npm package of productList and push to artifactory and use in json file of container.
+
+Easy to implement but when ever productList changes container should be redeployed.
+
+
+2) Run-Time Integration(client-side integration)
+After container gets loaded in the browser, it gets access to productList source code.
+bundle your project into productList.js and deploy it to static website.
+When user visits container app it fetches productList.js and executes it.
+
+ProductList can be deployed independently at any time
+different versions of productList can be deployed and container can decide which one to use
+Tooling + setup is far more complicated.
+
+3) Server Integration (Ton of backend code required)
+while sending down JS to load up container, a server decides on whether or not to include productsList source.

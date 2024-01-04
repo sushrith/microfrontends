@@ -1,0 +1,23 @@
+features = products(MFE1) & cart(MFE2)
+container (MFE3)
+features will be created using html,css,js
+
+setup for MFE1 (products) - 
+1) Go to folder and > npm init -y
+2) npm install faker@5.1.0 html-webpack-plugin@4.5.0 nodemon webpack@5.3.2 webpack-cli@4.1.0 webpack-dev-server@3.11.0
+3) In js file it doesnt know import statement.
+4) create webpack.config.js file (copy content)
+5) inside package.json Go to Scripts - "start": "webpack"
+6) This webpack will bundle our code into a single file along with dependencies.
+7) add this devServer: {port: 8081,} to webpack.config.json and "start": "webpack serve" in package.json 
+8) Now when u to npm start our project runs on 8081
+9) Go to chrome localhost:80801/main.js -> you will see our bundled main.js file.
+10) To run our application in browser we need index.html page inside which our script tag will contain bundle.js.
+11) when we have multiple random js files generated from our webpack we need to include all those in html doc. 
+        how to do it?
+            - html-webpack-plugin we use this when ever webpack generates some file it will be automatically included in html page by this plugin.
+            - add configuration changes to webpack.config.js
+12) Now go to chrome and type localhost:8081 then u can see your application running.
+13) Now when every you make changes and save then it will automatically compile and updates bundle.js and added to index.html internally.
+
+Thats it now you have build your own MFE which runs on its own.

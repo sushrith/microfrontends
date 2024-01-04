@@ -1,0 +1,67 @@
+Now we have container & products MicroFrontends
+1) How to connect both of them?
+2) How container will know about products?
+
+- we need module fedration plugin to expose files and fetch those exposed files.
+
+how to expose files from products???
+
+step-1) products MFE
+Use module fedration plugin to expose files.
+files created by ModuleFederationPlugin:
+    1) remoteEntry.js   -> contains list of file available + directions to load them
+    2) src_index.js     -> src/index.js that can be safely loaded into the browser
+    3) faker.js         -> faker that can be safely loaded into the browser
+
+
+const ModuleFedrationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+module.exports = {
+    mode: 'development',
+    devServer: {
+        port: 8081
+    },
+    plugins: [
+        new ModuleFedrationPlugin({                 
+            name: 'products',                       // name of module 
+            filename: 'remoteEntry.js',             // manifest file which has info about files exposed how to use it n all
+            exposes: {
+                './ProductsIndex': './src/index'    // expose src/index file which can be fetched from products/ProductsIndex
+            },
+        }),]}
+
+setup-2) Container MFE
+Use module fedration plugin to fetch exposed files.
+A network call is made to products to get files from products
+
+const ModuleFedrationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+module.exports = {
+    mode: 'development',
+    devServer: {
+        port: 8080,
+    },
+    plugins: [
+        new ModuleFedrationPlugin({
+            name: 'container',                                              //name of container(not used)
+            remotes: {
+                products: 'products@http://localhost:8081/remoteEntry.js'   //fetch from module/IP/manifest
+            },
+        }),]}
+
+step3)
+create a file bootstrap.js
+inside index.js it should -> import('./bootstrap');
+inside bootstrap u can have application & fetch code from products like:
+
+        import 'products/ProductsIndex'; //u will get products code here.
+        console.log("container!");       //Logic of container   
+
+Why did we put all code into bootstrap.js???
+index.js has only import statements.
+    - webpack realizes before executing bootstrap.js it has to import code from products
+    - so before executing bootstrap.js we have get some code.
+
+     - If u directly run bootstrap.js it means the expectation is that we have access to this module and all the diff depencies that it req.
+     - So if u directly exeute it u will get err that no code for products.
+     - So by adding in the index.js file we are just giving webpack an oppourtunity inside the browser to go and fetch some diff from products before executing bootstrap.
+
+THAT'S IT THIS IS HOW YOU INTEGRATE TWO MicroFrontends.
