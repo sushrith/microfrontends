@@ -1,0 +1,203 @@
+History -> Object to get and set the current path the user is visiting. types - (BrowserHistory , Hash History or Memory History)
+Router -> Shows diff content based on the current path.
+
+Browser History -> Look at the path portion of the url to figure out what the current path is. (updates our URL)
+Hash History -> Look at everything after the '#' in the URL to figure out the current path.
+Memory or Abstract History-> keep track of the current path in memory (doesnot update the URL)
+
+
+            container(React-Router) [BrowserHistory]
+                |
+     -----------------------------------------------
+    |                                               |
+  Marketing (react-router)[Memory History]    Auth(React-router) [Memory History]  
+
+React-router in container will decides which app to load.(only it should update Browser URL)
+inside Marketing it decides which page inside Marketing to load. etc
+Each app have diff Router and they are seperate from each other.
+
+- We need to tell React-Router what kind of History we want to use.
+    - BrowserHistory , Hash History or Memory History
+    - BrowserHistory will only be accessable to change Main URL.
+    - Memory History will be accessable to change mfe URL.
+
+container: (BrowserHistory)
+1) App.js
+    <BrowserHistory>
+        <Routes>
+            <Route path="/" element={}/>
+        </Routes>
+    </BrowserHistory>
+
+Marketing: (MemoryHistory)
+1) App.js
+    import {Router} from 'react-router-dom';
+    // It doesnt have History we need to provide it.
+    // get history from props which Bootstrap provided.
+    <Router history = {history}>
+        <Routes>
+            <Route path="/" element={}/>
+        </Routes>
+    </Router>
+
+2) Bootstrap.js
+
+    import {createMemoryHistory} from 'history';
+    const mount = (el) =>{
+        const history = createMemoryHistory();
+        ReactDOM.render(<App history={history}/>,el);
+    }
+-----------------------------------------------------------------------------
+How to sync history inside Marketing and container??
+1) when u click in Marketing our container history should be updated
+Solution:- using callbacks. (onNavigate is passed to child when child navigation happens callbacks will updated container)
+
+Inside container:- 
+    const history = useHistory();
+    mount(ref.current ,{
+        onNavigate:({pathname:nextPathName})=>{    // listen function gives us this location obj
+            const pathname = history.location;
+            if(pathname !== nextPathName)
+                history.push(nextPathName);
+        }   
+    });
+
+Inside Marketing:-
+
+    const mount = (el,{onNavigate}) =>{
+        const history = createMemoryHistory();
+        if(onNavigate)                      //we will pass empty in isolation. 
+            history.listen(onNavigate);             //when navigation in child app it will call onNavigate.
+        ReactDOM.render(<App history={history}/>,el);
+    }
+
+
+if we implement both 1 & 2 when one app updates its history it will tell other.
+which is a loop and can be infinite calls for functions.
+How to avoid this problem?
+Sol:- Update History only when current path is not equal to nextPathName
+
+
+2) when u click in container our Marketing history should be updated
+Solution:- Marketing app returns a function onParentNavigate. when parent navigates it will call onParentNavigate then Marketing will update its history.    
+
+Inside Marketing:-
+
+    const mount = (el) =>{
+            const history = createMemoryHistory();
+            ReactDOM.render(<App history={history}/>,el);
+            
+            return {
+                onParentNavigate({pathname:nextPathName}){
+                    const pathname = history.location;
+                    if(pathname !== nextPathName)
+                        history.push(nextPathName);
+                }
+            }
+        
+        }
+
+
+Inside Container:-
+
+    useEffect(()=>{
+
+        const {onParentNavigate} = mount(ref.current);
+        history.listen(onParentNavigate);
+    },[]);
+
+
+----------------------------------------------------------------------
+            TWO WAY communicate (COMBINE ABOVE 1 & 2)
+
+
+Inside Container:-
+
+    useEffect(()=>{
+        const {onParentNavigate} = mount(ref.current,{
+            onNavigate:({pathname:nextPathName})=>{
+                if(pathname!==nextPathName){
+                    history.push(nextPathName);
+                }
+            }
+        });
+        if(onParentNavigate)
+            history.listen(onParentNavigate);
+    },[])
+
+
+Inside Marketing:-
+
+    const mount = (el,{onNavigate}) =>{
+            const history = createMemoryHistory();
+            ReactDOM.render(<App history={history}/>,el);
+            if(onNavigate)
+                history.listen(onNavigate);
+            return {
+                onParentNavigate({pathname:nextPathName}){
+                    const pathname = history.location;
+                    if(pathname !== nextPathName)
+                        history.push(nextPathName);
+                }
+            }
+        
+        }
+
+    if(process.env.Node_ENV === 'development'){
+        const root = document.getElementById("root");
+        if(root){
+            mount(root,{})
+        }
+    }
+--------------------------------------------------------------------------
+3) Inside Marketing we are using MemoryHistory so URL wont be changing it would be difficult for developers while developing.
+So when you are developing the application in isolation you need to use BrowserHistory inside Marketing app also.
+
+Inside Marketing:-
+
+const mount = (el,{onNavigate,defaultHistory}) =>{
+            const history = defaultHistory || createMemoryHistory();
+            
+            ReactDOM.render(<App history={history}/>,el);
+            
+            if(onNavigate)
+                history.listen(onNavigate);
+            
+            return {
+                onParentNavigate({pathname:nextPathName}){
+                    const pathname = history.location;
+                    if(pathname !== nextPathName)
+                        history.push(nextPathName);
+                }
+            }
+        
+        }
+
+    if(process.env.Node_ENV === 'development'){
+        
+        const root = document.getElementById("root");
+        
+        if(root){
+            mount(root,{defaultHistory: createMemoryHistory()});
+        }
+    }
+
+
+
+
+-----------------------------------------------------------------------
+Req1:
+Both the container + individual sub apps need routing features.
+
+Req2:
+Sub-apps might need to add in new routes all the time.
+    - New Routes added to subapps shouldnt req a redploy of the container.
+
+Req3:
+We might need to show two or more microfrontends at the same time.
+
+Req4:
+We need navigation features for sub-apps in both hosted mode and in isolation.
+
+Req5:
+If diff apps need to communicate information about routing, it should be done in as generic a fashion as possible.

@@ -1,0 +1,9 @@
+To avoid conflicts even after using style components.
+How?
+
+const generateClassName = createGenericClassName({
+    productionPrefix: 'ma',
+});
+
+<StylesProvider generateClassName={generateClassName}>
+</StylesProvider>
